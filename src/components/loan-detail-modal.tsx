@@ -10,9 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { StatusBadge } from "@/components/status-badge";
 import type { Loan } from "@/lib/types";
-import { getLoanItemName, getShortLoanId } from "@/lib/loan-utils";
+import { getLoanItemName, getShortLoanId, formatCheckoutDate } from "@/lib/loan-utils";
 import { format, isPast } from "date-fns";
-import { returnEquipment, returnBatch } from "@/lib/actions";
+import { returnEquipment, returnBatch, deleteLoan } from "@/lib/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -20,6 +20,7 @@ interface LoanDetailModalProps {
   loans: Loan[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isAdmin?: boolean;
 }
 
 function getComputedStatus(loan: Loan): "active" | "returned" | "overdue" {
@@ -29,9 +30,10 @@ function getComputedStatus(loan: Loan): "active" | "returned" | "overdue" {
   return loan.status;
 }
 
-export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalProps) {
+export function LoanDetailModal({ loans, open, onOpenChange, isAdmin = false }: LoanDetailModalProps) {
   const [isPending, startTransition] = useTransition();
   const [returnedIds, setReturnedIds] = useState<Set<string>>(new Set());
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const router = useRouter();
 
   if (loans.length === 0) return null;
@@ -49,13 +51,29 @@ export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalPr
   function handleReturnSingle(loanId: string, name: string) {
     startTransition(async () => {
       const result = await returnEquipment(loanId);
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success(`${result.equipmentName || name} returned`);
         setReturnedIds((prev) => new Set(prev).add(loanId));
         router.refresh();
       }
+    });
+  }
+
+  function handleDeleteLoan() {
+    startTransition(async () => {
+      // Delete all loans in this group in parallel
+      const results = await Promise.all(loans.map((loan) => deleteLoan(loan.id)));
+      const failed = results.find((r) => !r.success);
+      if (failed) {
+        toast.error(failed.error);
+        return;
+      }
+      toast.success(loans.length === 1 ? "Loan deleted." : `${loans.length} loans deleted.`);
+      onOpenChange(false);
+      setDeleteConfirmOpen(false);
+      router.refresh();
     });
   }
 
@@ -67,7 +85,7 @@ export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalPr
     }
     startTransition(async () => {
       const result = await returnBatch(batchId);
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success(`${result.count} items returned`);
@@ -101,13 +119,11 @@ export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalPr
           <div className="grid grid-cols-2 gap-3">
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Checked out</p>
-              <p className="text-sm">{format(new Date(firstLoan.checked_out_at), "MMM d, yyyy")}</p>
-              <p className="text-xs text-muted-foreground">{format(new Date(firstLoan.checked_out_at), "h:mm a")}</p>
+              <p className="text-sm">{formatCheckoutDate(firstLoan)}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Due date</p>
               <p className="text-sm">{format(new Date(firstLoan.due_date), "MMM d, yyyy")}</p>
-              <p className="text-xs text-muted-foreground">{format(new Date(firstLoan.due_date), "h:mm a")}</p>
             </div>
           </div>
 
@@ -116,6 +132,15 @@ export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalPr
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Returned</p>
               <p className="text-sm">{format(new Date(firstLoan.returned_at), "MMM d, yyyy 'at' h:mm a")}</p>
+              {firstLoan.returned_by && firstLoan.returned_by !== firstLoan.user_id && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Returned by{" "}
+                  <span className="font-medium text-foreground">
+                    {firstLoan.returned_by_user?.name || "another student"}
+                  </span>
+                  {" "}on behalf of {firstLoan.user?.name || "the borrower"}
+                </p>
+              )}
             </div>
           )}
 
@@ -142,12 +167,10 @@ export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalPr
                     className="flex items-center justify-between gap-3 rounded-md border border-border px-3 py-2.5"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">{getLoanItemName(loan)}</p>
-                        <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-                          {getShortLoanId(loan.id)}
-                        </span>
-                      </div>
+                      <p className="text-sm font-medium break-words">{getLoanItemName(loan)}</p>
+                      <span className="text-[10px] font-mono text-muted-foreground">
+                        {getShortLoanId(loan.id)}
+                      </span>
                     </div>
                     {isActive ? (
                       <Button
@@ -202,6 +225,50 @@ export function LoanDetailModal({ loans, open, onOpenChange }: LoanDetailModalPr
                 "Return item"
               )}
             </Button>
+          )}
+
+          {/* Admin Delete */}
+          {isAdmin && (
+            <>
+              {!deleteConfirmOpen ? (
+                <Button
+                  variant="outline"
+                  className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:hover:bg-red-950/30"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  disabled={isPending}
+                >
+                  Delete {loans.length === 1 ? "loan" : `${loans.length} loans`}
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20 p-3 space-y-3">
+                  <p className="text-sm text-red-800 dark:text-red-300">
+                    Are you sure? This will permanently delete{" "}
+                    {loans.length === 1 ? "this loan record" : `these ${loans.length} loan records`}.
+                    {hasActiveLoans && " Active loans will release equipment back to inventory."}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setDeleteConfirmOpen(false)}
+                      disabled={isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleDeleteLoan}
+                      disabled={isPending}
+                    >
+                      {isPending ? "Deleting..." : "Confirm Delete"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </DialogContent>

@@ -12,42 +12,49 @@ import type { Loan } from "@/lib/types";
 import { getLoanItemName } from "@/lib/loan-utils";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
+import { DeleteLoanButton } from "@/components/delete-loan-button";
 
 export default async function AdminDashboardPage() {
-  const { count: totalEquipment } = await supabaseAdmin
-    .from("equipment")
-    .select("*", { count: "exact", head: true });
-
-  const { count: checkedOutCount } = await supabaseAdmin
-    .from("equipment")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "checked_out");
-
-  const { count: availableCount } = await supabaseAdmin
-    .from("equipment")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "available");
-
-  const { data: overdueLoans } = await supabaseAdmin
-    .from("loans")
-    .select("*, equipment(*), user:users(*)")
-    .eq("status", "active")
-    .lt("due_date", new Date().toISOString())
-    .order("due_date", { ascending: true });
-
-  const { data: recentLoans } = await supabaseAdmin
-    .from("loans")
-    .select("*, equipment(*), user:users(*)")
-    .order("created_at", { ascending: false })
-    .limit(10);
+  // Run all 5 queries in parallel instead of sequentially
+  const [
+    { count: totalEquipment },
+    { count: checkedOutCount },
+    { count: availableCount },
+    { data: overdueLoans },
+    { data: recentLoans },
+  ] = await Promise.all([
+    supabaseAdmin
+      .from("equipment")
+      .select("*", { count: "exact", head: true }),
+    supabaseAdmin
+      .from("equipment")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "checked_out"),
+    supabaseAdmin
+      .from("equipment")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "available"),
+    supabaseAdmin
+      .from("loans")
+      .select("*, equipment(*), user:users(*)")
+      .eq("status", "active")
+      .lt("due_date", new Date().toISOString())
+      .order("due_date", { ascending: true })
+      .limit(50),
+    supabaseAdmin
+      .from("loans")
+      .select("*, equipment(*), user:users(*)")
+      .order("created_at", { ascending: false })
+      .limit(10),
+  ]);
 
   const overdueCount = overdueLoans?.length || 0;
 
   const stats = [
-    { label: "Total", value: totalEquipment || 0 },
-    { label: "Checked out", value: checkedOutCount || 0 },
-    { label: "Available", value: availableCount || 0 },
-    { label: "Overdue", value: overdueCount, highlight: overdueCount > 0 },
+    { label: "Total", value: totalEquipment || 0, color: "text-indigo-600 dark:text-indigo-400", bg: "bg-indigo-50 dark:bg-indigo-950/30", borderColor: "border-indigo-200 dark:border-indigo-800" },
+    { label: "Checked out", value: checkedOutCount || 0, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30", borderColor: "border-amber-200 dark:border-amber-800" },
+    { label: "Available", value: availableCount || 0, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", borderColor: "border-emerald-200 dark:border-emerald-800" },
+    { label: "Overdue", value: overdueCount, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30", borderColor: "border-red-200 dark:border-red-800" },
   ];
 
   return (
@@ -61,7 +68,7 @@ export default async function AdminDashboardPage() {
         </div>
         <Link
           href="/admin/equipment"
-          className="inline-flex h-9 items-center rounded-md bg-foreground px-3.5 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+          className="inline-flex h-9 items-center rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           Manage equipment
         </Link>
@@ -70,11 +77,11 @@ export default async function AdminDashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((stat) => (
-          <div key={stat.label} className="rounded-lg border border-border bg-card p-4">
+          <div key={stat.label} className={`rounded-lg border ${stat.borderColor} ${stat.bg} p-4`}>
             <p className="text-xs font-medium text-muted-foreground">
               {stat.label}
             </p>
-            <p className={`mt-1 text-2xl font-semibold tabular-nums ${stat.highlight ? "text-red-600" : "text-foreground"}`}>
+            <p className={`mt-1 text-2xl font-semibold tabular-nums ${stat.color}`}>
               {stat.value}
             </p>
           </div>
@@ -95,6 +102,7 @@ export default async function AdminDashboardPage() {
                   <TableHead>Equipment</TableHead>
                   <TableHead>Due date</TableHead>
                   <TableHead>Overdue by</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -112,6 +120,9 @@ export default async function AdminDashboardPage() {
                       <span className="text-sm font-medium text-red-600">
                         {formatDistanceToNow(new Date(loan.due_date))}
                       </span>
+                    </TableCell>
+                    <TableCell>
+                      <DeleteLoanButton loanId={loan.id} itemName={getLoanItemName(loan)} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -134,6 +145,7 @@ export default async function AdminDashboardPage() {
                   <TableHead>Action</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -155,6 +167,9 @@ export default async function AdminDashboardPage() {
                             : loan.status
                         }
                       />
+                    </TableCell>
+                    <TableCell>
+                      <DeleteLoanButton loanId={loan.id} itemName={getLoanItemName(loan)} />
                     </TableCell>
                   </TableRow>
                 ))}

@@ -21,9 +21,9 @@ export default async function LoginPage({
   return (
     <div className="flex min-h-screen">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between bg-foreground p-10 text-background">
+      <div className="hidden lg:flex lg:w-[480px] xl:w-[560px] flex-col justify-between bg-[image:var(--gradient-hero)] p-10 text-white">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-background text-foreground">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 text-white backdrop-blur-sm">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -48,12 +48,12 @@ export default async function LoginPage({
             Borrow mics, cables, speakers, and AV gear — all from your browser. No more sign-up sheets.
           </p>
           <div className="flex flex-col gap-0.5">
-            <p className="text-sm font-medium text-background/80">Anglo-Chinese Junior College</p>
-            <p className="text-sm text-background/50">Audio &amp; Visual Equipment Loans</p>
+            <p className="text-sm font-medium text-white/80">Anglo-Chinese Junior College</p>
+            <p className="text-sm text-white/50">Audio &amp; Visual Equipment Loans</p>
           </div>
         </div>
 
-        <p className="text-xs text-background/40">ACJC Equipment Loans</p>
+        <p className="text-xs text-white/40">ACJC Equipment Loans</p>
       </div>
 
       {/* Right panel — login form */}
@@ -61,7 +61,7 @@ export default async function LoginPage({
         <div className="w-full max-w-sm">
           {/* Mobile-only logo */}
           <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="16"

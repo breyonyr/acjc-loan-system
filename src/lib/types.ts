@@ -4,6 +4,7 @@ export interface User {
   name: string;
   image: string | null;
   role: "student" | "admin";
+  status: "active" | "banned" | "pending";
   created_at: string;
 }
 
@@ -28,6 +29,7 @@ export interface Loan {
   checked_out_at: string;
   due_date: string;
   returned_at: string | null;
+  returned_by: string | null;
   status: "active" | "returned" | "overdue";
   notes: string | null;
   batch_id: string | null;
@@ -35,6 +37,7 @@ export interface Loan {
   // Joined fields
   equipment?: Equipment;
   user?: User;
+  returned_by_user?: User;
 }
 
 // Client-side cart item for the borrow form

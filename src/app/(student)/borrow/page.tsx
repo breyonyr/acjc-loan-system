@@ -1,7 +1,7 @@
 import { getUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase";
-import { BorrowForm } from "@/components/borrow-form";
+import { BorrowFormLoader } from "@/components/borrow-form-loader";
 import type { Equipment } from "@/lib/types";
 
 export default async function BorrowPage() {
@@ -24,7 +24,7 @@ export default async function BorrowPage() {
         </p>
       </div>
 
-      <BorrowForm
+      <BorrowFormLoader
         user={{ name: user.name, email: user.email }}
         availableEquipment={(equipment as Equipment[]) || []}
       />

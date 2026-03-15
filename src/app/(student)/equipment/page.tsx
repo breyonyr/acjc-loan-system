@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase";
 import { EquipmentCard } from "@/components/equipment-card";
 import { EquipmentSearch } from "@/components/equipment-search";
+import { sanitizeFilterInput } from "@/lib/sanitize";
 import type { Equipment } from "@/lib/types";
 
 export default async function EquipmentPage({
@@ -9,7 +10,7 @@ export default async function EquipmentPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const params = await searchParams;
-  const query = params.q || "";
+  const query = sanitizeFilterInput(params.q || "");
   const statusFilter = params.status || "available";
 
   let supabaseQuery = supabaseAdmin
@@ -47,8 +48,8 @@ export default async function EquipmentPage({
         </div>
       ) : (
         <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
-          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary/60">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.3-4.3" />
             </svg>

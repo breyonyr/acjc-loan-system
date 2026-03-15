@@ -31,7 +31,7 @@ export function AddEquipmentDialog() {
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const result = await createEquipment(formData);
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success("Equipment added successfully!");

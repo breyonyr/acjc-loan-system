@@ -54,14 +54,31 @@ export async function GET(request: NextRequest) {
       data.user.user_metadata?.picture ||
       null;
 
-    await supabaseAdmin.from("users").upsert(
-      {
+    // Check if user already exists
+    const { data: existingUser } = await supabaseAdmin
+      .from("users")
+      .select("id, status")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existingUser) {
+      // Update name/image for existing user (don't touch status)
+      await supabaseAdmin
+        .from("users")
+        .update({ name, image })
+        .eq("id", existingUser.id);
+    } else {
+      // New user — check if approval mode is enabled
+      const { isApprovalRequired } = await import("@/lib/settings");
+      const approvalRequired = await isApprovalRequired();
+
+      await supabaseAdmin.from("users").insert({
         email,
         name,
         image,
-      },
-      { onConflict: "email" }
-    );
+        status: approvalRequired ? "pending" : "active",
+      });
+    }
   }
 
   return NextResponse.redirect(`${origin}/dashboard`);

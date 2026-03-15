@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -13,7 +14,7 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { LoanDetailModal } from "@/components/loan-detail-modal";
 import type { Loan } from "@/lib/types";
-import { getLoanItemName, getShortLoanId } from "@/lib/loan-utils";
+import { getLoanItemName, getShortLoanId, formatCheckoutDate } from "@/lib/loan-utils";
 import { format, isPast } from "date-fns";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
@@ -23,6 +24,10 @@ interface LoanHistoryListProps {
   loans: Loan[];
   initialStatus: string;
   initialQuery: string;
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  isAdmin?: boolean;
 }
 
 const statusFilters = [
@@ -62,12 +67,28 @@ function getGroupStatus(loans: Loan[]): "active" | "returned" | "overdue" {
   return "returned";
 }
 
-export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHistoryListProps) {
+export function LoanHistoryList({
+  loans,
+  initialStatus,
+  initialQuery,
+  currentPage,
+  totalPages,
+  totalCount,
+  isAdmin = false,
+}: LoanHistoryListProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedLoans, setSelectedLoans] = useState<Loan[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup debounce timer on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const updateSearch = useCallback(
     (key: string, value: string) => {
@@ -77,6 +98,10 @@ export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHist
       } else {
         params.delete(key);
       }
+      // Reset to page 1 when filters change
+      if (key !== "page") {
+        params.delete("page");
+      }
       startTransition(() => {
         router.push(`/history?${params.toString()}`);
       });
@@ -84,8 +109,36 @@ export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHist
     [router, searchParams]
   );
 
-  const groups = groupByBatch(loans);
-  const groupEntries = Array.from(groups.entries());
+  const debouncedSearch = useCallback(
+    (value: string) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        updateSearch("q", value);
+      }, 300);
+    },
+    [updateSearch]
+  );
+
+  const goToPage = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (page > 1) {
+        params.set("page", String(page));
+      } else {
+        params.delete("page");
+      }
+      startTransition(() => {
+        router.push(`/history?${params.toString()}`);
+      });
+    },
+    [router, searchParams]
+  );
+
+  // Memoize expensive grouping computation
+  const groupEntries = useMemo(() => {
+    const groups = groupByBatch(loans);
+    return Array.from(groups.entries());
+  }, [loans]);
 
   function openModal(loansInGroup: Loan[]) {
     setSelectedLoans(loansInGroup);
@@ -114,7 +167,7 @@ export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHist
             type="search"
             placeholder="Search by student or item..."
             defaultValue={initialQuery}
-            onChange={(e) => updateSearch("q", e.target.value)}
+            onChange={(e) => debouncedSearch(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -188,13 +241,20 @@ export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHist
                         <p className="text-sm">{itemLabel}</p>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {format(new Date(first.checked_out_at), "MMM d, yyyy")}
+                        {formatCheckoutDate(first)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {format(new Date(first.due_date), "MMM d, yyyy")}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={getGroupStatus(groupLoans)} />
+                        <div className="flex flex-col gap-0.5">
+                          <StatusBadge status={getGroupStatus(groupLoans)} />
+                          {first.status === "returned" && first.returned_by && first.returned_by !== first.user_id && (
+                            <span className="text-[10px] text-muted-foreground">
+                              by {first.returned_by_user?.name || "another student"}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -239,14 +299,49 @@ export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHist
                     )}
                   </p>
                   <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span>Out: {format(new Date(first.checked_out_at), "MMM d")}</span>
+                    <span>Out: {formatCheckoutDate(first, true)}</span>
                     <span>&middot;</span>
                     <span>Due: {format(new Date(first.due_date), "MMM d")}</span>
                   </div>
+                  {first.status === "returned" && first.returned_by && first.returned_by !== first.user_id && (
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Returned by <span className="font-medium">{first.returned_by_user?.name || "another student"}</span>
+                    </p>
+                  )}
                 </div>
               );
             })}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border pt-4">
+              <p className="text-sm text-muted-foreground">
+                {totalCount} {totalCount === 1 ? "loan" : "loans"} total
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage <= 1 || isPending}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage >= totalPages || isPending}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
@@ -263,6 +358,7 @@ export function LoanHistoryList({ loans, initialStatus, initialQuery }: LoanHist
         loans={selectedLoans}
         open={modalOpen}
         onOpenChange={setModalOpen}
+        isAdmin={isAdmin}
       />
     </div>
   );

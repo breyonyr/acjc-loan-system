@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseServer } from "./supabase-server";
 import { supabaseAdmin } from "./supabase";
 import type { User } from "./types";
@@ -10,7 +11,8 @@ export async function getSession() {
   return user;
 }
 
-export async function getUser(): Promise<User | null> {
+// Deduplicate getUser calls within the same request using React cache()
+export const getUser = cache(async (): Promise<User | null> => {
   const authUser = await getSession();
   if (!authUser?.email) {
     return null;
@@ -23,4 +25,4 @@ export async function getUser(): Promise<User | null> {
     .single();
 
   return data as User | null;
-}
+});

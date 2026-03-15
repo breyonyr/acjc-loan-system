@@ -9,15 +9,22 @@ const categoryIcons: Record<string, string> = {
   other: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
 };
 
+const categoryColors: Record<string, string> = {
+  audio: "bg-[var(--color-audio-bg)] text-[var(--color-audio)]",
+  visual: "bg-[var(--color-visual-bg)] text-[var(--color-visual)]",
+  cables: "bg-[var(--color-cables-bg)] text-[var(--color-cables)]",
+  other: "bg-[var(--color-other-bg)] text-[var(--color-other)]",
+};
+
 export function EquipmentCard({ equipment }: { equipment: Equipment }) {
   const iconPath = categoryIcons[equipment.category || "other"] || categoryIcons.other;
 
   return (
     <Link
       href={`/equipment/${equipment.id}`}
-      className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/50"
+      className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-primary/5 hover:border-primary/20"
     >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${categoryColors[equipment.category || "other"] || categoryColors.other}`}>
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="18"

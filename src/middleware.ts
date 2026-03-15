@@ -2,6 +2,22 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // ─── CSRF / Origin protection for mutations ───────────
+  const method = request.method;
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host");
+
+    // Allow requests with no origin (e.g. server-to-server, same-origin form posts)
+    if (origin) {
+      const originHost = new URL(origin).host;
+      if (originHost !== host) {
+        return new NextResponse("Forbidden", { status: 403 });
+      }
+    }
+  }
+
+  // ─── Supabase auth session refresh ────────────────────
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -13,7 +29,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -32,7 +48,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public routes
-  const publicRoutes = ["/", "/login", "/auth"];
+  const publicRoutes = ["/", "/login", "/auth", "/api/cron"];
   const isPublic = publicRoutes.some((route) => pathname.startsWith(route));
 
   if (isPublic) {

@@ -39,7 +39,7 @@ export function EquipmentActions({ equipment }: { equipment: Equipment }) {
   function handleUpdate(formData: FormData) {
     startTransition(async () => {
       const result = await updateEquipment(equipment.id, formData);
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success("Equipment updated!");
@@ -52,7 +52,7 @@ export function EquipmentActions({ equipment }: { equipment: Equipment }) {
   function handleDelete() {
     startTransition(async () => {
       const result = await deleteEquipment(equipment.id);
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success("Equipment deleted.");

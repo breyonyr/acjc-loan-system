@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -38,15 +39,26 @@ const navItems = [
     label: "History",
     icon: "M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
   },
+  {
+    href: "/equipment",
+    label: "Equipment",
+    icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+  },
 ];
 
 export function Navbar({ user }: NavbarProps) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
   const isAdmin = user.role === "admin";
 
   const links = isAdmin
     ? [
         ...navItems,
+        {
+          href: "/admin/users",
+          label: "Users",
+          icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+        },
         {
           href: "/admin",
           label: "Admin",
@@ -66,6 +78,12 @@ export function Navbar({ user }: NavbarProps) {
     return pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
   }
 
+  function cycleTheme() {
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("system");
+    else setTheme("light");
+  }
+
   return (
     <>
       {/* ── Top bar ── */}
@@ -76,7 +94,7 @@ export function Navbar({ user }: NavbarProps) {
               href="/dashboard"
               className="flex items-center gap-2 text-sm font-semibold text-foreground"
             >
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
+              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="14"
@@ -107,13 +125,13 @@ export function Navbar({ user }: NavbarProps) {
                     className={cn(
                       "relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                       active
-                        ? "text-foreground"
+                        ? "text-primary bg-primary/8"
                         : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {link.label}
                     {active && (
-                      <span className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-foreground" />
+                      <span className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-primary" />
                     )}
                   </Link>
                 );
@@ -121,42 +139,92 @@ export function Navbar({ user }: NavbarProps) {
             </nav>
           </div>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger suppressHydrationWarning className="flex items-center gap-2 rounded-full outline-none ring-ring focus-visible:ring-2">
-              <Avatar className="h-8 w-8 border border-border">
-                <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
-                <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground">{user.email}</p>
-              </div>
-              <DropdownMenuSeparator />
-              {isAdmin && (
-                <>
-                  <DropdownMenuItem className="cursor-pointer p-0">
-                    <Link href="/admin" className="flex w-full px-2 py-1.5">Admin Dashboard</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem
-                onClick={() => signOut()}
-                className="cursor-pointer text-muted-foreground"
+          <div className="flex items-center gap-2">
+            {/* Theme toggle */}
+            <button
+              type="button"
+              onClick={cycleTheme}
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:text-foreground"
+              aria-label="Toggle theme"
+              suppressHydrationWarning
+            >
+              {/* Sun icon (shown in dark mode) */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="hidden dark:block"
               >
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2" />
+                <path d="M12 20v2" />
+                <path d="m4.93 4.93 1.41 1.41" />
+                <path d="m17.66 17.66 1.41 1.41" />
+                <path d="M2 12h2" />
+                <path d="M20 12h2" />
+                <path d="m6.34 17.66-1.41 1.41" />
+                <path d="m19.07 4.93-1.41 1.41" />
+              </svg>
+              {/* Moon icon (shown in light mode) */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="block dark:hidden"
+              >
+                <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
+              </svg>
+            </button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger suppressHydrationWarning className="flex items-center gap-2 rounded-full outline-none ring-ring focus-visible:ring-2">
+                <Avatar className="h-8 w-8 border border-border">
+                  <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+                  <AvatarFallback className="bg-primary/10 text-xs font-medium text-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium">{user.name}</p>
+                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer p-0">
+                      <Link href="/admin" className="flex w-full px-2 py-1.5">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={() => signOut()}
+                  className="cursor-pointer text-muted-foreground"
+                >
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
       {/* ── Mobile bottom tab bar ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background sm:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/20 bg-background sm:hidden">
         <div className="flex items-stretch">
           {links.map((link) => {
             const active = isActive(link.href);
@@ -166,7 +234,7 @@ export function Navbar({ user }: NavbarProps) {
                 href={link.href}
                 className={cn(
                   "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
-                  active ? "text-foreground" : "text-muted-foreground"
+                  active ? "text-primary" : "text-muted-foreground"
                 )}
               >
                 <svg

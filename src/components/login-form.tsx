@@ -40,7 +40,7 @@ export function LoginForm() {
       <button
         onClick={handleGoogleSignIn}
         disabled={isLoading}
-        className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground shadow-sm transition-all hover:bg-accent active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+        className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border bg-card text-sm font-medium text-foreground shadow-sm transition-all hover:bg-primary/5 hover:border-primary/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
       >
         {isLoading ? (
           <span className="flex items-center gap-2 text-muted-foreground">

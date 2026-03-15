@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef, useEffect } from "react";
+import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,10 +25,43 @@ interface BorrowFormProps {
   availableEquipment: Equipment[];
 }
 
+function QuantityInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [raw, setRaw] = useState(String(value));
+
+  useEffect(() => {
+    setRaw(String(value));
+  }, [value]);
+
+  return (
+    <Input
+      type="number"
+      inputMode="numeric"
+      min={1}
+      max={99}
+      value={raw}
+      onChange={(e) => setRaw(e.target.value)}
+      onBlur={() => {
+        const num = parseInt(raw);
+        if (isNaN(num) || num < 1) {
+          setRaw("1");
+          onChange(1);
+        } else {
+          const clamped = Math.max(1, Math.min(99, num));
+          setRaw(String(clamped));
+          onChange(clamped);
+        }
+      }}
+      className="h-10 w-[4.5rem] text-center text-sm"
+    />
+  );
+}
+
 export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [successData, setSuccessData] = useState<{ items: CartItem[]; dueDate: string; count: number } | null>(null);
 
   const today = format(new Date(), "yyyy-MM-dd");
   const defaultDue = format(addDays(new Date(), 3), "yyyy-MM-dd");
@@ -162,20 +195,21 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
       const result = await borrowEquipment({
         equipmentIds: inventoryIds,
         customItems,
-        loanDate: new Date(loanDate).toISOString(),
-        dueDate: new Date(dueDate).toISOString(),
+        loanDate: `${loanDate}T00:00:00`,
+        dueDate: `${dueDate}T23:59:59`,
         notes: notes || undefined,
       });
 
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
         setShowConfirm(false);
       } else {
-        toast.success(
-          `${result.count} ${result.count === 1 ? "item" : "items"} borrowed`
-        );
+        setSuccessData({ items: [...cart], dueDate, count: result.count });
         setShowConfirm(false);
-        router.push("/dashboard");
+        setShowSuccess(true);
+        setCart([]);
+        setNotes("");
+        setDueDate(format(addDays(new Date(), 3), "yyyy-MM-dd"));
       }
     });
   }
@@ -347,8 +381,8 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
                         className={cn(
                           "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
                           item.type === "inventory"
-                            ? "bg-blue-50 text-blue-600"
-                            : "bg-amber-50 text-amber-600"
+                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
+                            : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
                         )}
                       >
                         {item.type === "inventory" ? "Inventory" : "Custom"}
@@ -365,15 +399,9 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
                   {item.type === "custom" && (
                     <div className="flex items-center gap-1">
                       <span className="text-xs text-muted-foreground">Qty</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={99}
+                      <QuantityInput
                         value={item.quantity}
-                        onChange={(e) =>
-                          updateCustomQty(index, parseInt(e.target.value) || 1)
-                        }
-                        className="h-10 w-[4.5rem] text-center text-sm"
+                        onChange={(qty) => updateCustomQty(index, qty)}
                       />
                     </div>
                   )}
@@ -512,10 +540,10 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
                 {cart.map((item, index) => (
                   <li
                     key={index}
-                    className="flex items-center justify-between"
+                    className="flex items-center justify-between gap-3"
                   >
-                    <span className="font-medium">{item.name}</span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="font-medium min-w-0 break-words">{item.name}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">
                       {item.type === "custom"
                         ? `x${item.quantity} · Custom`
                         : "Inventory"}
@@ -549,6 +577,73 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
               ) : (
                 "Confirm"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Success Dialog ── */}
+      <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-950/40">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-green-600 dark:text-green-400"
+              >
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+            <DialogTitle className="text-center">Equipment borrowed!</DialogTitle>
+            <DialogDescription className="text-center">
+              {successData?.count === 1
+                ? "Your item has been checked out."
+                : `${successData?.count} items have been checked out.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {successData && (
+            <div className="flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Due date</span>
+                <span className="font-medium">
+                  {format(new Date(successData.dueDate), "MMM d, yyyy")}
+                </span>
+              </div>
+              <div className="border-t border-border pt-3">
+                <p className="mb-2 text-xs text-muted-foreground uppercase tracking-wider">Items</p>
+                <ul className="flex flex-col gap-1.5">
+                  {successData.items.map((item, index) => (
+                    <li key={index} className="flex items-center justify-between gap-3">
+                      <span className="font-medium min-w-0 break-words">{item.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {item.type === "custom" ? `x${item.quantity}` : "Inventory"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="sm:flex-col gap-2">
+            <Button onClick={() => router.push("/dashboard")} className="w-full">
+              View my loans
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowSuccess(false)}
+              className="w-full"
+            >
+              Borrow more
             </Button>
           </DialogFooter>
         </DialogContent>

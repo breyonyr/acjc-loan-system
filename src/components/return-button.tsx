@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useOptimistic } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -23,12 +23,25 @@ export function ReturnButton({
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [optimisticReturned, setOptimisticReturned] = useOptimistic(false);
   const router = useRouter();
+
+  if (optimisticReturned) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 dark:bg-green-950/40 dark:text-green-400">
+        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Returned
+      </span>
+    );
+  }
 
   function handleReturn() {
     startTransition(async () => {
+      setOptimisticReturned(true);
       const result = await returnEquipment(loanId);
-      if (result.error) {
+      if (!result.success) {
         toast.error(result.error);
       } else {
         toast.success(`${result.equipmentName || equipmentName} returned`);
