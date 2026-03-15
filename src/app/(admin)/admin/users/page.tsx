@@ -10,6 +10,7 @@ import {
 import { UserActions } from "@/components/user-actions";
 import { ApprovalToggle } from "@/components/approval-toggle";
 import { BulkApproveButton } from "@/components/bulk-approve-button";
+import { UserFilter } from "@/components/user-filter";
 import { isApprovalRequired } from "@/lib/settings";
 import { sanitizeFilterInput } from "@/lib/sanitize";
 import type { User } from "@/lib/types";
@@ -21,10 +22,12 @@ const PAGE_SIZE = 20;
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; status?: string; role?: string }>;
 }) {
   const params = await searchParams;
   const searchQuery = sanitizeFilterInput(params.q || "");
+  const statusFilter = sanitizeFilterInput(params.status || "all");
+  const roleFilter = sanitizeFilterInput(params.role || "all");
   const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
@@ -39,6 +42,14 @@ export default async function AdminUsersPage({
     usersQuery = usersQuery.or(
       `name.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`
     );
+  }
+
+  if (statusFilter && statusFilter !== "all") {
+    usersQuery = usersQuery.eq("status", statusFilter);
+  }
+
+  if (roleFilter && roleFilter !== "all") {
+    usersQuery = usersQuery.eq("role", roleFilter);
   }
 
   // Run user fetch + approval setting + pending count in parallel
@@ -75,6 +86,17 @@ export default async function AdminUsersPage({
   const totalCount = count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
+  // Build pagination URL helper
+  function paginationUrl(targetPage: number) {
+    const p = new URLSearchParams();
+    if (searchQuery) p.set("q", searchQuery);
+    if (statusFilter !== "all") p.set("status", statusFilter);
+    if (roleFilter !== "all") p.set("role", roleFilter);
+    if (targetPage > 1) p.set("page", String(targetPage));
+    const qs = p.toString();
+    return `/admin/users${qs ? `?${qs}` : ""}`;
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -104,31 +126,12 @@ export default async function AdminUsersPage({
       {/* Approval Mode Toggle */}
       <ApprovalToggle enabled={approvalEnabled} />
 
-      {/* Search */}
-      <form action="/admin/users" method="GET">
-        <div className="relative max-w-sm">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            type="search"
-            name="q"
-            defaultValue={searchQuery}
-            placeholder="Search by name or email..."
-            className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-      </form>
+      {/* Search + Filters */}
+      <UserFilter
+        initialQuery={searchQuery}
+        initialStatus={statusFilter}
+        initialRole={roleFilter}
+      />
 
       {/* Users Table */}
       {users && users.length > 0 ? (
@@ -217,10 +220,7 @@ export default async function AdminUsersPage({
               <div className="flex items-center gap-2">
                 {page > 1 && (
                   <Link
-                    href={`/admin/users?${new URLSearchParams({
-                      ...(searchQuery ? { q: searchQuery } : {}),
-                      page: String(page - 1),
-                    }).toString()}`}
+                    href={paginationUrl(page - 1)}
                     className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
                   >
                     Previous
@@ -228,10 +228,7 @@ export default async function AdminUsersPage({
                 )}
                 {page < totalPages && (
                   <Link
-                    href={`/admin/users?${new URLSearchParams({
-                      ...(searchQuery ? { q: searchQuery } : {}),
-                      page: String(page + 1),
-                    }).toString()}`}
+                    href={paginationUrl(page + 1)}
                     className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
                   >
                     Next
@@ -244,7 +241,9 @@ export default async function AdminUsersPage({
       ) : (
         <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
           <p className="text-sm text-muted-foreground">
-            {searchQuery ? "No users match your search." : "No users found."}
+            {searchQuery || statusFilter !== "all" || roleFilter !== "all"
+              ? "No users match your filters."
+              : "No users found."}
           </p>
         </div>
       )}

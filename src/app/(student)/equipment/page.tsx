@@ -7,11 +7,12 @@ import type { Equipment } from "@/lib/types";
 export default async function EquipmentPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; category?: string }>;
 }) {
   const params = await searchParams;
   const query = sanitizeFilterInput(params.q || "");
-  const statusFilter = params.status || "available";
+  const statusFilter = params.status || "";
+  const categoryFilter = params.category || "all";
 
   let supabaseQuery = supabaseAdmin
     .from("equipment")
@@ -20,6 +21,13 @@ export default async function EquipmentPage({
 
   if (statusFilter && statusFilter !== "all") {
     supabaseQuery = supabaseQuery.eq("status", statusFilter);
+  } else if (!statusFilter) {
+    // Default to available
+    supabaseQuery = supabaseQuery.eq("status", "available");
+  }
+
+  if (categoryFilter && categoryFilter !== "all") {
+    supabaseQuery = supabaseQuery.eq("category", categoryFilter);
   }
 
   if (query) {
@@ -29,16 +37,19 @@ export default async function EquipmentPage({
   const { data: equipment } = await supabaseQuery;
   const count = equipment?.length || 0;
 
+  const showingStatus = statusFilter === "all" ? "total" : "available";
+
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-lg font-semibold tracking-tight">Equipment</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {count} {statusFilter === "all" ? "total" : statusFilter} {count === 1 ? "item" : "items"}
+          {count} {showingStatus} {count === 1 ? "item" : "items"}
+          {categoryFilter !== "all" && ` in ${categoryFilter}`}
         </p>
       </div>
 
-      <EquipmentSearch initialQuery={query} initialStatus={statusFilter} />
+      <EquipmentSearch initialQuery={query} initialStatus={statusFilter} initialCategory={categoryFilter} />
 
       {equipment && equipment.length > 0 ? (
         <div className="grid gap-2 sm:grid-cols-2">

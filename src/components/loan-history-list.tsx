@@ -275,7 +275,7 @@ export function LoanHistoryList({
               return (
                 <div
                   key={key}
-                  className="rounded-lg border border-border bg-card p-4 active:bg-muted/50 transition-colors cursor-pointer"
+                  className="rounded-lg border border-border bg-card p-4 cursor-pointer transition-colors hover:bg-muted/50"
                   onClick={() => openModal(groupLoans)}
                 >
                   <div className="flex items-start justify-between gap-3">

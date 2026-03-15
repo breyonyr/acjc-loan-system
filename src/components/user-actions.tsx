@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { banUser, unbanUser, deleteUser, approveUser } from "@/lib/actions";
+import { banUser, unbanUser, deleteUser, approveUser, promoteToAdmin, demoteToStudent } from "@/lib/actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { User } from "@/lib/types";
@@ -29,6 +29,7 @@ export function UserActions({
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [promoteConfirmOpen, setPromoteConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -80,6 +81,25 @@ export function UserActions({
     });
   }
 
+  function handleToggleRole() {
+    startTransition(async () => {
+      const result = isAdmin
+        ? await demoteToStudent(user.id)
+        : await promoteToAdmin(user.id);
+      if (!result.success) {
+        toast.error(result.error);
+      } else {
+        toast.success(
+          isAdmin
+            ? `${user.name} has been demoted to student.`
+            : `${user.name} has been promoted to admin.`
+        );
+        setPromoteConfirmOpen(false);
+        router.refresh();
+      }
+    });
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -102,14 +122,24 @@ export function UserActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {isAdmin ? (
-            <DropdownMenuItem disabled className="text-muted-foreground">
-              Cannot manage admins
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem
+                onClick={() => setPromoteConfirmOpen(true)}
+                className="text-amber-600"
+              >
+                Demote to student
+              </DropdownMenuItem>
+            </>
           ) : (
             <>
               {isPendingApproval && (
                 <DropdownMenuItem onClick={handleApprove}>
                   Approve user
+                </DropdownMenuItem>
+              )}
+              {!isPendingApproval && !isBanned && (
+                <DropdownMenuItem onClick={() => setPromoteConfirmOpen(true)}>
+                  Promote to admin
                 </DropdownMenuItem>
               )}
               {isBanned ? (
@@ -220,6 +250,54 @@ export function UserActions({
               disabled={isPending}
             >
               {isPending ? "Deleting..." : "Delete User"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Promote/Demote Confirmation */}
+      <Dialog open={promoteConfirmOpen} onOpenChange={setPromoteConfirmOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {isAdmin ? "Demote to Student" : "Promote to Admin"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground">
+            {isAdmin ? (
+              <p>
+                Are you sure you want to demote{" "}
+                <strong className="text-foreground">{user.name}</strong> from
+                admin to student? They will lose access to the admin panel.
+              </p>
+            ) : (
+              <p>
+                Are you sure you want to promote{" "}
+                <strong className="text-foreground">{user.name}</strong> to
+                admin? They will gain full access to manage equipment, users,
+                and loans.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPromoteConfirmOpen(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleToggleRole}
+              disabled={isPending}
+            >
+              {isPending
+                ? isAdmin
+                  ? "Demoting..."
+                  : "Promoting..."
+                : isAdmin
+                ? "Demote to Student"
+                : "Promote to Admin"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -490,6 +490,78 @@ export async function unbanUser(userId: string): Promise<ActionResult> {
   return { success: true };
 }
 
+export async function promoteToAdmin(userId: string): Promise<ActionResult> {
+  const user = await getUser();
+  if (!user || user.role !== "admin") {
+    return actionError(ErrorCode.UNAUTHORIZED, "Only admins can promote users.");
+  }
+
+  if (!isValidUUID(userId)) return actionError(ErrorCode.VALIDATION_ERROR, "Invalid user ID.");
+
+  const rateLimited = checkRateLimit(user.id);
+  if (rateLimited) return rateLimited;
+
+  const { data: targetUser } = await supabaseAdmin
+    .from("users")
+    .select("id, role, status")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!targetUser) return actionError(ErrorCode.NOT_FOUND, "User not found.");
+  if (targetUser.role === "admin") {
+    return actionError(ErrorCode.CONFLICT, "User is already an admin.");
+  }
+  if (targetUser.status !== "active") {
+    return actionError(ErrorCode.VALIDATION_ERROR, "Only active users can be promoted.");
+  }
+
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({ role: "admin" })
+    .eq("id", userId);
+
+  if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to promote user. Please try again.");
+
+  revalidateAll();
+  return { success: true };
+}
+
+export async function demoteToStudent(userId: string): Promise<ActionResult> {
+  const user = await getUser();
+  if (!user || user.role !== "admin") {
+    return actionError(ErrorCode.UNAUTHORIZED, "Only admins can demote users.");
+  }
+
+  if (!isValidUUID(userId)) return actionError(ErrorCode.VALIDATION_ERROR, "Invalid user ID.");
+  if (userId === user.id) {
+    return actionError(ErrorCode.VALIDATION_ERROR, "You cannot demote yourself.");
+  }
+
+  const rateLimited = checkRateLimit(user.id);
+  if (rateLimited) return rateLimited;
+
+  const { data: targetUser } = await supabaseAdmin
+    .from("users")
+    .select("id, role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (!targetUser) return actionError(ErrorCode.NOT_FOUND, "User not found.");
+  if (targetUser.role !== "admin") {
+    return actionError(ErrorCode.CONFLICT, "User is not an admin.");
+  }
+
+  const { error } = await supabaseAdmin
+    .from("users")
+    .update({ role: "student" })
+    .eq("id", userId);
+
+  if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to demote user. Please try again.");
+
+  revalidateAll();
+  return { success: true };
+}
+
 // ─── Delete Loan Action (Admin) ─────────────────────────
 
 export async function deleteLoan(loanId: string): Promise<ActionResult> {

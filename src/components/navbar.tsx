@@ -26,6 +26,29 @@ interface NavbarProps {
 const navItems = [
   {
     href: "/dashboard",
+    label: "Home",
+    icon: "M3 3h7v7H3V3zm11 0h7v7h-7V3zm0 11h7v7h-7v-7zM3 14h7v7H3v-7z",
+  },
+  {
+    href: "/borrow",
+    label: "Borrow",
+    icon: "M12 5v14M5 12h14",
+  },
+  {
+    href: "/history",
+    label: "History",
+    icon: "M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+  },
+  {
+    href: "/equipment",
+    label: "Browse",
+    icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+  },
+];
+
+const desktopNavItems = [
+  {
+    href: "/dashboard",
     label: "Dashboard",
     icon: "M3 3h7v7H3V3zm11 0h7v7h-7V3zm0 11h7v7h-7v-7zM3 14h7v7H3v-7z",
   },
@@ -51,14 +74,26 @@ export function Navbar({ user }: NavbarProps) {
   const { theme, setTheme } = useTheme();
   const isAdmin = user.role === "admin";
 
-  const links = isAdmin
+  const desktopLinks = isAdmin
     ? [
-        ...navItems,
+        ...desktopNavItems,
         {
           href: "/admin/users",
           label: "Users",
           icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
         },
+        {
+          href: "/admin",
+          label: "Admin",
+          icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+        },
+      ]
+    : desktopNavItems;
+
+  // Mobile: admin gets an "Admin" tab instead of separate Users + Admin (keeps it to 5 tabs max)
+  const mobileLinks = isAdmin
+    ? [
+        ...navItems,
         {
           href: "/admin",
           label: "Admin",
@@ -87,7 +122,7 @@ export function Navbar({ user }: NavbarProps) {
   return (
     <>
       {/* ── Top bar ── */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
             <Link
@@ -116,7 +151,7 @@ export function Navbar({ user }: NavbarProps) {
 
             {/* Desktop nav — hidden on mobile */}
             <nav className="hidden sm:flex items-center gap-0.5">
-              {links.map((link) => {
+              {desktopLinks.map((link) => {
                 const active = isActive(link.href);
                 return (
                   <Link
@@ -203,10 +238,17 @@ export function Navbar({ user }: NavbarProps) {
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem className="cursor-pointer p-0">
+                  <Link href="/profile" className="flex w-full px-2 py-1.5">Profile</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 {isAdmin && (
                   <>
                     <DropdownMenuItem className="cursor-pointer p-0">
                       <Link href="/admin" className="flex w-full px-2 py-1.5">Admin Dashboard</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer p-0">
+                      <Link href="/admin/users" className="flex w-full px-2 py-1.5">Manage Users</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
@@ -224,19 +266,23 @@ export function Navbar({ user }: NavbarProps) {
       </header>
 
       {/* ── Mobile bottom tab bar ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t-2 border-primary/20 bg-background sm:hidden">
-        <div className="flex items-stretch">
-          {links.map((link) => {
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border/50 sm:hidden">
+        <div className="flex items-center justify-around px-1">
+          {mobileLinks.map((link) => {
             const active = isActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium transition-colors",
-                  active ? "text-primary" : "text-muted-foreground"
+                  "relative flex flex-col items-center justify-center py-2 px-3 transition-colors",
+                  active && "bg-primary/8 rounded-lg"
                 )}
               >
+                {/* Active indicator dot */}
+                {active && (
+                  <span className="absolute top-1 h-1 w-5 rounded-full bg-primary" />
+                )}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -244,13 +290,22 @@ export function Navbar({ user }: NavbarProps) {
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth={active ? "2" : "1.5"}
+                  strokeWidth={active ? "2.5" : "1.5"}
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className={cn(
+                    "transition-colors",
+                    active ? "text-primary" : "text-muted-foreground"
+                  )}
                 >
                   <path d={link.icon} />
                 </svg>
-                {link.label}
+                <span className={cn(
+                  "mt-0.5 text-[10px] font-medium",
+                  active ? "text-primary font-semibold" : "text-muted-foreground"
+                )}>
+                  {link.label}
+                </span>
               </Link>
             );
           })}
