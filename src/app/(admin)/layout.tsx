@@ -16,7 +16,7 @@ export default async function AdminLayout({
     <div className="min-h-screen bg-background">
       <Navbar user={{ name: user.name, email: user.email, image: user.image, role: user.role }} />
       <RealtimeProvider>
-        <main className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:pb-6">{children}</main>
+        <main className="mx-auto max-w-5xl px-4 pb-20 pt-6 sm:pb-6 animate-page-enter">{children}</main>
       </RealtimeProvider>
     </div>
   );

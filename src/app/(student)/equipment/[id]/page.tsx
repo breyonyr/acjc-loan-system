@@ -23,6 +23,10 @@ export default async function EquipmentDetailPage({
 
   const { id } = await params;
 
+  // Validate UUID format before querying database
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id)) notFound();
+
   const { data: equipment } = await supabaseAdmin
     .from("equipment")
     .select("*")

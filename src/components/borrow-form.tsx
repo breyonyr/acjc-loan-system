@@ -270,7 +270,7 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
                   {/* Inventory matches */}
                   {Object.entries(grouped).map(([category, items]) => (
                     <div key={category}>
-                      <p className="px-3 pt-2 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                      <p className="px-3 pt-2 pb-1 text-[10px] font-semibold text-muted-foreground">
                         {category}
                       </p>
                       {items.map((item) => (
@@ -379,7 +379,7 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
                       </p>
                       <span
                         className={cn(
-                          "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
+                          "inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] font-semibold",
                           item.type === "inventory"
                             ? "bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400"
                             : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400"
@@ -619,7 +619,7 @@ export function BorrowForm({ user, availableEquipment }: BorrowFormProps) {
                 </span>
               </div>
               <div className="border-t border-border pt-3">
-                <p className="mb-2 text-xs text-muted-foreground uppercase tracking-wider">Items</p>
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Items</p>
                 <ul className="flex flex-col gap-1.5">
                   {successData.items.map((item, index) => (
                     <li key={index} className="flex items-center justify-between gap-3">

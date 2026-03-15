@@ -113,14 +113,14 @@ export default async function DashboardPage() {
       {/* Active Loans */}
       <section>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Active Loans</h2>
+          <h2 className="text-sm font-semibold text-foreground">Active Loans</h2>
           {activeCount > 0 && (
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">{activeCount}</span>
           )}
         </div>
         {batchGroups.length > 0 ? (
           <div className="flex flex-col gap-2">
-            {batchGroups.map((group) => {
+            {batchGroups.map((group, groupIndex) => {
               const isBatch = group.loans.length > 1 && group.batchId;
 
               if (isBatch) {
@@ -132,9 +132,10 @@ export default async function DashboardPage() {
                 return (
                   <div
                     key={group.batchId}
-                    className={`rounded-lg border p-4 ${
+                    className={`rounded-lg border p-4 shadow-sm animate-fade-in-up ${
                       hasOverdue ? "border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20" : "border-border bg-card"
                     }`}
+                    style={{ "--stagger": groupIndex } as React.CSSProperties}
                   >
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="min-w-0">
@@ -186,9 +187,10 @@ export default async function DashboardPage() {
               return (
                 <div
                   key={loan.id}
-                  className={`flex items-center justify-between gap-4 rounded-lg border p-4 ${
+                  className={`flex items-center justify-between gap-4 rounded-lg border p-4 shadow-sm animate-fade-in-up ${
                     isOverdue ? "border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20" : "border-border bg-card"
                   }`}
+                  style={{ "--stagger": groupIndex } as React.CSSProperties}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">
@@ -239,7 +241,7 @@ export default async function DashboardPage() {
 
         return (
           <section>
-            <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
               Due Soon
             </h2>
             <div className="flex flex-col gap-2">

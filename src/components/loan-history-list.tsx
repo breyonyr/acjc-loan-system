@@ -265,7 +265,7 @@ export function LoanHistoryList({
 
           {/* Mobile Cards */}
           <div className="flex flex-col gap-2 sm:hidden">
-            {groupEntries.map(([key, groupLoans]) => {
+            {groupEntries.map(([key, groupLoans], index) => {
               const first = groupLoans[0];
               const loanId = first.batch_id
                 ? getShortLoanId(first.batch_id)
@@ -275,7 +275,8 @@ export function LoanHistoryList({
               return (
                 <div
                   key={key}
-                  className="rounded-lg border border-border bg-card p-4 cursor-pointer transition-colors hover:bg-muted/50"
+                  className="rounded-lg border border-border bg-card p-4 shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:border-primary/20 animate-fade-in-up"
+                  style={{ "--stagger": index } as React.CSSProperties}
                   onClick={() => openModal(groupLoans)}
                 >
                   <div className="flex items-start justify-between gap-3">

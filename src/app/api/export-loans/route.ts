@@ -1,6 +1,7 @@
 import { getUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 import { format } from "date-fns";
+import { rateLimit } from "@/lib/rate-limit";
 
 const CHUNK_SIZE = 1000;
 
@@ -8,6 +9,12 @@ export async function GET() {
   const user = await getUser();
   if (!user || user.role !== "admin") {
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  // Rate limit: max 5 exports per minute per user
+  const { allowed } = rateLimit(`export:${user.id}`, 5, 60_000);
+  if (!allowed) {
+    return new Response("Too many requests. Please wait before exporting again.", { status: 429 });
   }
 
   const headers = [

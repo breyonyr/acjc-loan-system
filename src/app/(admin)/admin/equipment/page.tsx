@@ -88,7 +88,7 @@ export default async function AdminEquipmentPage({
                     </TableCell>
                     <TableCell>
                       {item.category && (
-                        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        <span className="text-xs font-semibold text-muted-foreground">
                           {item.category}
                         </span>
                       )}

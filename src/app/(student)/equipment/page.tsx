@@ -53,8 +53,10 @@ export default async function EquipmentPage({
 
       {equipment && equipment.length > 0 ? (
         <div className="grid gap-2 sm:grid-cols-2">
-          {(equipment as Equipment[]).map((item) => (
-            <EquipmentCard key={item.id} equipment={item} />
+          {(equipment as Equipment[]).map((item, index) => (
+            <div key={item.id} className="animate-fade-in-up" style={{ "--stagger": index } as React.CSSProperties}>
+              <EquipmentCard equipment={item} />
+            </div>
           ))}
         </div>
       ) : (

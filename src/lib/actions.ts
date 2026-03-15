@@ -17,7 +17,33 @@ function checkRateLimit(userId: string): { success: false; error: string; code: 
   return null;
 }
 
-// ─── Revalidate common paths ────────────────────────────
+// ─── Granular revalidation helpers ──────────────────────
+// Instead of invalidating every path on every action,
+// only revalidate the paths affected by each action type.
+
+/** Revalidate paths affected by equipment changes (create/update/delete) */
+function revalidateEquipment() {
+  revalidatePath("/equipment");
+  revalidatePath("/borrow");
+  revalidatePath("/admin/equipment");
+}
+
+/** Revalidate paths affected by loan changes (borrow/return) */
+function revalidateLoans() {
+  revalidatePath("/dashboard");
+  revalidatePath("/equipment");
+  revalidatePath("/borrow");
+  revalidatePath("/history");
+  revalidatePath("/admin");
+}
+
+/** Revalidate paths affected by user management (ban/approve/promote) */
+function revalidateUsers() {
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
+}
+
+/** Revalidate all paths (fallback for actions that affect everything) */
 function revalidateAll() {
   revalidatePath("/dashboard");
   revalidatePath("/equipment");
@@ -90,7 +116,7 @@ export async function createEquipment(formData: FormData): Promise<ActionResult>
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to create equipment. Please try again.");
 
-  revalidateAll();
+  revalidateEquipment();
   return { success: true };
 }
 
@@ -129,7 +155,7 @@ export async function updateEquipment(id: string, formData: FormData): Promise<A
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to update equipment. Please try again.");
 
-  revalidateAll();
+  revalidateEquipment();
   return { success: true };
 }
 
@@ -151,7 +177,7 @@ export async function deleteEquipment(id: string): Promise<ActionResult> {
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to delete equipment. Please try again.");
 
-  revalidateAll();
+  revalidateEquipment();
   return { success: true };
 }
 
@@ -300,7 +326,7 @@ export async function borrowEquipment({
     if (equipError) return actionError(ErrorCode.DATABASE_ERROR, "Failed to update equipment status. Please try again.");
   }
 
-  revalidateAll();
+  revalidateLoans();
   return { success: true, count: allLoans.length };
 }
 
@@ -344,7 +370,7 @@ export async function returnEquipment(loanId: string): Promise<ActionResult<{ eq
     await bulkReleaseEquipment([loan.equipment_id]);
   }
 
-  revalidateAll();
+  revalidateLoans();
   const displayName = loan.equipment?.name || loan.custom_item_name || "item";
   return { success: true, equipmentName: displayName };
 }
@@ -390,7 +416,7 @@ export async function returnBatch(batchId: string): Promise<ActionResult<{ count
   // Bulk release equipment (replaces old N+1 loop)
   await bulkReleaseEquipment(equipmentIds);
 
-  revalidateAll();
+  revalidateLoans();
   return { success: true, count: loans.length };
 }
 
@@ -486,7 +512,7 @@ export async function unbanUser(userId: string): Promise<ActionResult> {
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to unban user. Please try again.");
 
-  revalidateAll();
+  revalidateUsers();
   return { success: true };
 }
 
@@ -522,7 +548,7 @@ export async function promoteToAdmin(userId: string): Promise<ActionResult> {
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to promote user. Please try again.");
 
-  revalidateAll();
+  revalidateUsers();
   return { success: true };
 }
 
@@ -558,7 +584,7 @@ export async function demoteToStudent(userId: string): Promise<ActionResult> {
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to demote user. Please try again.");
 
-  revalidateAll();
+  revalidateUsers();
   return { success: true };
 }
 
@@ -597,7 +623,7 @@ export async function deleteLoan(loanId: string): Promise<ActionResult> {
     await bulkReleaseEquipment([loan.equipment_id]);
   }
 
-  revalidateAll();
+  revalidateLoans();
   return { success: true };
 }
 
@@ -681,7 +707,7 @@ export async function approveUser(userId: string): Promise<ActionResult> {
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to approve user. Please try again.");
 
-  revalidateAll();
+  revalidateUsers();
   return { success: true };
 }
 
@@ -713,7 +739,7 @@ export async function bulkApproveUsers(): Promise<ActionResult<{ count: number }
 
   if (error) return actionError(ErrorCode.DATABASE_ERROR, "Failed to approve users. Please try again.");
 
-  revalidateAll();
+  revalidateUsers();
   return { success: true, count };
 }
 

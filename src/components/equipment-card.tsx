@@ -22,7 +22,7 @@ export function EquipmentCard({ equipment }: { equipment: Equipment }) {
   return (
     <Link
       href={`/equipment/${equipment.id}`}
-      className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-primary/5 hover:border-primary/20"
+      className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:bg-primary/5 hover:border-primary/20"
     >
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${categoryColors[equipment.category || "other"] || categoryColors.other}`}>
         <svg

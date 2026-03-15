@@ -110,7 +110,7 @@ export function LoanDetailModal({ loans, open, onOpenChange, isAdmin = false }: 
         {/* Borrower */}
         <div className="space-y-4">
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Borrower</p>
+            <p className="text-xs font-semibold text-muted-foreground mb-1">Borrower</p>
             <p className="text-sm font-medium">{firstLoan.user?.name || "Unknown"}</p>
             <p className="text-xs text-muted-foreground">{firstLoan.user?.email}</p>
           </div>
@@ -118,11 +118,11 @@ export function LoanDetailModal({ loans, open, onOpenChange, isAdmin = false }: 
           {/* Dates */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Checked out</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Checked out</p>
               <p className="text-sm">{formatCheckoutDate(firstLoan)}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Due date</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Due date</p>
               <p className="text-sm">{format(new Date(firstLoan.due_date), "MMM d, yyyy")}</p>
             </div>
           </div>
@@ -130,7 +130,7 @@ export function LoanDetailModal({ loans, open, onOpenChange, isAdmin = false }: 
           {/* Returned date (if applicable) */}
           {firstLoan.status === "returned" && firstLoan.returned_at && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Returned</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Returned</p>
               <p className="text-sm">{format(new Date(firstLoan.returned_at), "MMM d, yyyy 'at' h:mm a")}</p>
               {firstLoan.returned_by && firstLoan.returned_by !== firstLoan.user_id && (
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -147,14 +147,14 @@ export function LoanDetailModal({ loans, open, onOpenChange, isAdmin = false }: 
           {/* Notes */}
           {firstLoan.notes && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
+              <p className="text-xs font-semibold text-muted-foreground mb-1">Notes</p>
               <p className="text-sm text-muted-foreground">{firstLoan.notes}</p>
             </div>
           )}
 
           {/* Items */}
           <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="text-xs font-semibold text-muted-foreground mb-2">
               Items ({loans.length})
             </p>
             <div className="flex flex-col gap-1.5">

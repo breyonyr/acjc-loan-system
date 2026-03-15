@@ -127,3 +127,54 @@
     @apply font-sans;
   }
 }
+
+/* Animation keyframes */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Utility classes */
+.animate-fade-in-up {
+  animation: fade-in-up 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--stagger, 0) * 60ms);
+}
+
+.animate-page-enter {
+  animation: page-enter 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card-hover {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.08);
+}
+.dark .card-hover:hover {
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.25);
+}
+
+.tab-spring {
+  transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tab-spring:active {
+  transform: scale(0.9);
+}

@@ -55,7 +55,7 @@ export default async function ProfilePage() {
       <h1 className="text-lg font-semibold tracking-tight">Profile</h1>
 
       {/* User info card */}
-      <div className="rounded-lg border border-border bg-card p-6">
+      <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
           <Avatar className="h-16 w-16 border-2 border-border">
             <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
@@ -98,12 +98,12 @@ export default async function ProfilePage() {
 
       {/* Borrowing stats */}
       <section>
-        <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+        <h2 className="mb-3 text-sm font-semibold text-foreground">
           Borrowing Stats
         </h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {stats.map((stat) => (
-            <div key={stat.label} className={`rounded-lg border ${stat.border} ${stat.bg} p-4`}>
+            <div key={stat.label} className={`rounded-lg border ${stat.border} ${stat.bg} p-4 shadow-sm`}>
               <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
               <p className={`mt-1 text-2xl font-semibold tabular-nums ${stat.color}`}>
                 {stat.value}

@@ -77,7 +77,7 @@ export default async function AdminDashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {stats.map((stat) => (
-          <div key={stat.label} className={`rounded-lg border ${stat.borderColor} ${stat.bg} p-4`}>
+          <div key={stat.label} className={`rounded-lg border ${stat.borderColor} ${stat.bg} p-4 shadow-sm`}>
             <p className="text-xs font-medium text-muted-foreground">
               {stat.label}
             </p>
@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
       {/* Overdue */}
       {overdueLoans && overdueLoans.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
             Overdue ({overdueCount})
           </h2>
           <div className="overflow-x-auto rounded-lg border border-border">
@@ -134,7 +134,7 @@ export default async function AdminDashboardPage() {
 
       {/* Recent Activity */}
       <section>
-        <h2 className="mb-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">Recent activity</h2>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Recent activity</h2>
         {recentLoans && recentLoans.length > 0 ? (
           <div className="overflow-x-auto rounded-lg border border-border">
             <Table>

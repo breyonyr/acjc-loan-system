@@ -28,21 +28,29 @@ const navItems = [
     href: "/dashboard",
     label: "Home",
     icon: "M3 3h7v7H3V3zm11 0h7v7h-7V3zm0 11h7v7h-7v-7zM3 14h7v7H3v-7z",
+    iconFilled: "M3 3h7v7H3V3zm11 0h7v7h-7V3zm0 11h7v7h-7v-7zM3 14h7v7H3v-7z",
+    fillable: true,
   },
   {
     href: "/borrow",
     label: "Borrow",
-    icon: "M12 5v14M5 12h14",
+    icon: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v8M8 12h8",
+    iconFilled: "M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v8M8 12h8",
+    fillable: false, // circle-plus: fill the circle but keep strokes for the plus
   },
   {
     href: "/history",
     label: "History",
     icon: "M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+    iconFilled: "M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+    fillable: false, // circle with hands: keep strokes visible
   },
   {
     href: "/equipment",
     label: "Browse",
     icon: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+    iconFilled: "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z",
+    fillable: true,
   },
 ];
 
@@ -98,6 +106,8 @@ export function Navbar({ user }: NavbarProps) {
           href: "/admin",
           label: "Admin",
           icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+          iconFilled: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+          fillable: true,
         },
       ]
     : navItems;
@@ -158,16 +168,14 @@ export function Navbar({ user }: NavbarProps) {
                     key={link.href}
                     href={link.href}
                     className={cn(
-                      "relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                      "relative rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150",
+                      "after:absolute after:inset-x-1 after:-bottom-[calc(0.5rem+1px)] after:h-0.5 after:rounded-full after:bg-primary after:origin-center after:transition-transform after:duration-200",
                       active
-                        ? "text-primary bg-primary/8"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "text-primary bg-primary/8 font-semibold after:scale-x-100"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50 after:scale-x-0"
                     )}
                   >
                     {link.label}
-                    {active && (
-                      <span className="absolute inset-x-1 -bottom-[calc(0.5rem+1px)] h-0.5 rounded-full bg-primary" />
-                    )}
                   </Link>
                 );
               })}
@@ -275,34 +283,33 @@ export function Navbar({ user }: NavbarProps) {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "relative flex flex-col items-center justify-center py-2 px-3 transition-colors",
-                  active && "bg-primary/8 rounded-lg"
+                  "tab-spring relative flex flex-col items-center justify-center py-2 px-3 min-w-[3.5rem]",
                 )}
               >
-                {/* Active indicator dot */}
+                {/* Pill background for active tab */}
                 {active && (
-                  <span className="absolute top-1 h-1 w-5 rounded-full bg-primary" />
+                  <span className="absolute inset-x-1 inset-y-1 rounded-xl bg-primary/10" />
                 )}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
+                  width="22"
+                  height="22"
                   viewBox="0 0 24 24"
-                  fill="none"
+                  fill={active && link.fillable ? "currentColor" : "none"}
                   stroke="currentColor"
                   strokeWidth={active ? "2.5" : "1.5"}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   className={cn(
-                    "transition-colors",
+                    "relative z-10 transition-all duration-200",
                     active ? "text-primary" : "text-muted-foreground"
                   )}
                 >
                   <path d={link.icon} />
                 </svg>
                 <span className={cn(
-                  "mt-0.5 text-[10px] font-medium",
-                  active ? "text-primary font-semibold" : "text-muted-foreground"
+                  "relative z-10 mt-0.5 text-[10px] transition-all duration-200",
+                  active ? "text-primary font-bold" : "text-muted-foreground font-medium"
                 )}>
                   {link.label}
                 </span>
